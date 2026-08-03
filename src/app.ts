@@ -1,4 +1,5 @@
-import express, { Express, Request, Response } from 'express';
+import cookieParser from 'cookie-parser';
+import express, { Express, NextFunction, Request, Response } from 'express';
 import authRoutes from './modules/auth/auth.routes';
 import brokerRoutes from './modules/broker/broker.routes';
 import distributionRoutes from './modules/distribution/distribution.routes';
@@ -14,6 +15,11 @@ export function createApp(): Express {
   const app = express();
 
   app.use(express.json());
+  app.use(cookieParser());
+
+  app.get('/api/health', (_req: Request, res: Response) => {
+    res.status(200).json({ status: 'ok' });
+  });
 
   app.use('/api/auth', authRoutes);
   app.use('/api/brokers', brokerRoutes);
@@ -23,6 +29,12 @@ export function createApp(): Express {
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({ error: 'Not found' });
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   });
 
   return app;
