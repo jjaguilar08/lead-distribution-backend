@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// Admin / internal user account used to authenticate against the API.
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+/// A broker that leads can be distributed to, with capacity and working-hours rules.
+model Broker {
+  id          Int      @id @default(autoincrement())
+  name        String
+  isActive    Boolean  @default(true) @map("is_active")
+  dailyCap    Int      @map("daily_cap")
+  timezone    String
+  openTime    String   @map("open_time")
+  closeTime   String   @map("close_time")
+  /// Comma-separated ISO weekday numbers (1=Monday .. 7=Sunday), e.g. "1,2,3,4,5"
+  workingDays String   @map("working_days")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  distributionBrokers DistributionBroker[]
+  leads               Lead[]
+
+  @@map("brokers")
+}
+
+/// The single intake form definition. Only one row is ever expected to exist
+/// (enforced in the service layer, not by a DB constraint).
+model Form {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  leads         Lead[]
+  distributions Distribution[]
+
+  @@map("forms")
+}
+
+/// The single active distribution configuration for a form. Only one row is
+/// ever expected to exist (enforced in the service layer, not by a DB constraint).
+model Distribution {
+  id        Int      @id @default(autoincrement())
+  formId    Int      @map("form_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  form    Form                 @relation(fields: [formId], references: [id])
+  brokers DistributionBroker[]
+
+  @@map("distributions")
+}
+
+/// Join table linking a Distribution to the Brokers included in it, along
+/// with each broker's percentage share of the distributed leads.
+model DistributionBroker {
+  id             Int     @id @default(autoincrement())
+  distributionId Int     @map("distribution_id")
+  brokerId       Int     @map("broker_id")
+  percentage     Int
+  isActive       Boolean @default(true) @map("is_active")
+
+  distribution Distribution @relation(fields: [distributionId], references: [id])
+  broker       Broker       @relation(fields: [brokerId], references: [id])
+
+  @@map("distribution_brokers")
+}
+
+/// Distribution outcome for a lead.
+enum LeadStatus {
+  sent
+  unsent
+  duplicate
+  failed
+}
+
+/// A lead submitted through the form, optionally assigned to a broker.
+model Lead {
+  id               Int        @id @default(autoincrement())
+  name             String
+  email            String
+  phone            String
+  ipAddress        String     @map("ip_address")
+  formId           Int        @map("form_id")
+  assignedBrokerId Int?       @map("assigned_broker_id")
+  status           LeadStatus
+  createdAt        DateTime   @default(now()) @map("created_at")
+
+  form           Form    @relation(fields: [formId], references: [id])
+  assignedBroker Broker? @relation(fields: [assignedBrokerId], references: [id])
+
+  @@map("leads")
+}
