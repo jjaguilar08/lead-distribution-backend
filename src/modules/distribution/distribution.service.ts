@@ -58,6 +58,16 @@ export class DistributionService {
   ) {}
 
   /**
+   * Returns the single distribution, if one has been created. Only one
+   * distribution is ever allowed to exist, so callers don't need an id to
+   * look it up.
+   * @returns the distribution, or null if none exists yet.
+   */
+  async getCurrent(): Promise<Distribution | null> {
+    return this.distributionRepository.findFirst();
+  }
+
+  /**
    * Creates the distribution, auto-linked to the existing form. Only one
    * distribution is ever allowed to exist.
    * @returns the created distribution.

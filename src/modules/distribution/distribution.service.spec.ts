@@ -70,6 +70,20 @@ describe('DistributionService', () => {
     distributionService = new DistributionService(distributionRepository, formRepository, leadRepository);
   });
 
+  describe('getCurrent', () => {
+    it('returns the distribution when one exists', async () => {
+      distributionRepository.findFirst.mockResolvedValue(distribution);
+
+      await expect(distributionService.getCurrent()).resolves.toEqual(distribution);
+    });
+
+    it('returns null when no distribution exists yet', async () => {
+      distributionRepository.findFirst.mockResolvedValue(null);
+
+      await expect(distributionService.getCurrent()).resolves.toBeNull();
+    });
+  });
+
   describe('create', () => {
     it('throws NoFormError when no form exists', async () => {
       formRepository.findFirst.mockResolvedValue(null);

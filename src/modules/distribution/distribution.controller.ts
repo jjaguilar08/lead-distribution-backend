@@ -14,6 +14,19 @@ export class DistributionController {
   constructor(private readonly distributionService: DistributionService) {}
 
   /**
+   * Handles GET /api/distribution — returns the distribution, or null if
+   * none has been created yet. Only one distribution is ever allowed to
+   * exist, so this is the lookup callers use instead of guessing an id.
+   * @param _req - the Express request.
+   * @param res - the Express response.
+   * @returns a promise that resolves once the response has been sent.
+   */
+  getCurrent = async (_req: Request, res: Response): Promise<void> => {
+    const distribution = await this.distributionService.getCurrent();
+    res.status(200).json({ distribution });
+  };
+
+  /**
    * Handles POST /api/distribution — creates the distribution, auto-linked
    * to the existing form.
    * @param _req - the Express request.

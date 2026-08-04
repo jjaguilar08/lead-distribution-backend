@@ -11,6 +11,7 @@ const distributionController = new DistributionController(
   new DistributionService(new DistributionRepository(), new FormRepository(), new LeadRepository()),
 );
 
+router.get('/', requireAuth, distributionController.getCurrent);
 router.post('/', requireAuth, distributionController.create);
 router.put('/brokers', requireAuth, distributionController.replaceBrokers);
 router.get('/:id', requireAuth, distributionController.getDetail);
