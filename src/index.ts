@@ -3,6 +3,8 @@ import { ENV } from './config/env';
 
 const app = createApp();
 
-app.listen(ENV.PORT, () => {
-  console.log(`Server listening on port ${ENV.PORT}`);
+const LOOPBACK_HOST = '127.0.0.1';
+
+app.listen(ENV.PORT, LOOPBACK_HOST, () => {
+  console.log(`Server listening on ${LOOPBACK_HOST}:${ENV.PORT}`);
 });

@@ -3,8 +3,8 @@ import express, { Express, NextFunction, Request, Response } from 'express';
 import authRoutes from './modules/auth/auth.routes';
 import brokerRoutes from './modules/broker/broker.routes';
 import distributionRoutes from './modules/distribution/distribution.routes';
-import formRoutes from './modules/form/form.routes';
-import leadRoutes from './modules/lead/lead.routes';
+import formRoutes, { formPublicRoutes } from './modules/form/form.routes';
+import leadRoutes, { leadPublicRoutes } from './modules/lead/lead.routes';
 
 /**
  * Builds and configures the Express application. Exported as a factory (not
@@ -23,9 +23,11 @@ export function createApp(): Express {
 
   app.use('/api/auth', authRoutes);
   app.use('/api/brokers', brokerRoutes);
-  app.use('/api/forms', formRoutes);
-  app.use('/api/distributions', distributionRoutes);
+  app.use('/api/form', formRoutes);
+  app.use('/api/distribution', distributionRoutes);
   app.use('/api/leads', leadRoutes);
+  app.use('/api/public/forms', formPublicRoutes);
+  app.use('/api/public/leads', leadPublicRoutes);
 
   app.use((_req: Request, res: Response) => {
     res.status(404).json({ error: 'Not found' });

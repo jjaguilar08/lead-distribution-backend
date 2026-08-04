@@ -23,7 +23,7 @@ async function main(): Promise<void> {
 
   const admin = await prisma.user.upsert({
     where: { email },
-    update: {},
+    update: { passwordHash },
     create: { email, passwordHash },
   });
 
