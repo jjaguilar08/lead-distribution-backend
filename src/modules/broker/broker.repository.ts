@@ -43,6 +43,15 @@ export class BrokerRepository {
   }
 
   /**
+   * Finds every broker matching the given ids.
+   * @param ids - the broker ids to look up.
+   * @returns the matching brokers (fewer than `ids.length` if some don't exist).
+   */
+  async findByIds(ids: number[]): Promise<Broker[]> {
+    return prisma.broker.findMany({ where: { id: { in: ids } } });
+  }
+
+  /**
    * Finds every lead ever assigned to a broker, joined with the form name.
    * @param brokerId - the broker id to look up leads for.
    * @returns the broker's leads, each including its form's name.

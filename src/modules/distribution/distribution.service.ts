@@ -1,4 +1,5 @@
 import { Distribution, DistributionBroker } from '@prisma/client';
+import { BrokerRepository } from '../broker/broker.repository';
 import { FormRepository } from '../form/form.repository';
 import { LeadRepository } from '../lead/lead.repository';
 import { DistributionRepository } from './distribution.repository';
@@ -40,6 +41,14 @@ export class InvalidPercentageError extends Error {
   }
 }
 
+/** Thrown when a broker share references a brokerId that doesn't exist. */
+export class InvalidBrokerIdError extends Error {
+  constructor() {
+    super('One or more broker ids do not exist');
+    this.name = 'InvalidBrokerIdError';
+  }
+}
+
 /** The Distribution Detail page's data source: the distribution, its brokers, and every lead that has passed through it. */
 export interface DistributionDetailDto {
   id: number;
@@ -49,12 +58,13 @@ export interface DistributionDetailDto {
   leads: DistributionLeadDto[];
 }
 
-/** All distribution business logic. Depends on DistributionRepository (plus FormRepository and LeadRepository for cross-domain reads) via constructor injection for testability. */
+/** All distribution business logic. Depends on DistributionRepository (plus FormRepository, LeadRepository, and BrokerRepository for cross-domain reads) via constructor injection for testability. */
 export class DistributionService {
   constructor(
     private readonly distributionRepository: DistributionRepository,
     private readonly formRepository: FormRepository,
     private readonly leadRepository: LeadRepository,
+    private readonly brokerRepository: BrokerRepository,
   ) {}
 
   /**
@@ -94,6 +104,7 @@ export class DistributionService {
    * @returns the newly created DistributionBroker rows.
    * @throws {DistributionNotFoundError} if no distribution exists yet.
    * @throws {InvalidPercentageError} if any broker's percentage isn't a non-negative number.
+   * @throws {InvalidBrokerIdError} if any broker's id doesn't exist.
    */
   async replaceBrokers(dto: ReplaceDistributionBrokersDto): Promise<DistributionBroker[]> {
     const distribution = await this.distributionRepository.findFirst();
@@ -104,6 +115,14 @@ export class DistributionService {
     for (const broker of dto.brokers) {
       if (typeof broker.percentage !== 'number' || !Number.isFinite(broker.percentage) || broker.percentage < 0) {
         throw new InvalidPercentageError();
+      }
+    }
+
+    const brokerIds = Array.from(new Set(dto.brokers.map((broker) => broker.brokerId)));
+    if (brokerIds.length > 0) {
+      const existingBrokers = await this.brokerRepository.findByIds(brokerIds);
+      if (existingBrokers.length !== brokerIds.length) {
+        throw new InvalidBrokerIdError();
       }
     }
 

@@ -1,10 +1,12 @@
 import { Broker, Distribution, DistributionBroker, Form, Lead } from '@prisma/client';
+import { BrokerRepository } from '../broker/broker.repository';
 import { FormRepository } from '../form/form.repository';
 import { LeadRepository } from '../lead/lead.repository';
 import { DistributionRepository, DistributionWithBrokers } from './distribution.repository';
 import {
   DistributionAlreadyExistsError,
   DistributionNotFoundError,
+  InvalidBrokerIdError,
   InvalidPercentageError,
   NoFormError,
   DistributionService,
@@ -14,6 +16,7 @@ describe('DistributionService', () => {
   let distributionRepository: jest.Mocked<DistributionRepository>;
   let formRepository: jest.Mocked<FormRepository>;
   let leadRepository: jest.Mocked<LeadRepository>;
+  let brokerRepository: jest.Mocked<BrokerRepository>;
   let distributionService: DistributionService;
 
   const form: Form = { id: 1, name: 'Intake Form', slug: 'intake-form', createdAt: new Date('2026-01-01T00:00:00Z') };
@@ -67,7 +70,10 @@ describe('DistributionService', () => {
     leadRepository = {
       findByFormId: jest.fn(),
     } as unknown as jest.Mocked<LeadRepository>;
-    distributionService = new DistributionService(distributionRepository, formRepository, leadRepository);
+    brokerRepository = {
+      findByIds: jest.fn(),
+    } as unknown as jest.Mocked<BrokerRepository>;
+    distributionService = new DistributionService(distributionRepository, formRepository, leadRepository, brokerRepository);
   });
 
   describe('getCurrent', () => {
@@ -149,11 +155,38 @@ describe('DistributionService', () => {
         { brokerId: 5, percentage: 0, isActive: true },
         { brokerId: 6, percentage: 100, isActive: false },
       ];
+      brokerRepository.findByIds.mockResolvedValue([broker, { ...broker, id: 6 }]);
       distributionRepository.replaceBrokers.mockResolvedValue([]);
 
       await distributionService.replaceBrokers({ brokers });
 
+      expect(brokerRepository.findByIds).toHaveBeenCalledWith([5, 6]);
       expect(distributionRepository.replaceBrokers).toHaveBeenCalledWith(distribution.id, brokers);
+    });
+
+    it('skips the broker-id existence check when the broker list is empty', async () => {
+      distributionRepository.findFirst.mockResolvedValue(distribution);
+      distributionRepository.replaceBrokers.mockResolvedValue([]);
+
+      await distributionService.replaceBrokers({ brokers: [] });
+
+      expect(brokerRepository.findByIds).not.toHaveBeenCalled();
+      expect(distributionRepository.replaceBrokers).toHaveBeenCalledWith(distribution.id, []);
+    });
+
+    it('throws InvalidBrokerIdError when a brokerId does not exist', async () => {
+      distributionRepository.findFirst.mockResolvedValue(distribution);
+      brokerRepository.findByIds.mockResolvedValue([broker]);
+
+      await expect(
+        distributionService.replaceBrokers({
+          brokers: [
+            { brokerId: 5, percentage: 50, isActive: true },
+            { brokerId: 999999, percentage: 50, isActive: true },
+          ],
+        }),
+      ).rejects.toThrow(InvalidBrokerIdError);
+      expect(distributionRepository.replaceBrokers).not.toHaveBeenCalled();
     });
   });
 

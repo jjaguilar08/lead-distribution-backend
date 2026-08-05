@@ -3,6 +3,7 @@ import { InvalidIdError, parseId } from '../../lib/parse-id';
 import {
   DistributionAlreadyExistsError,
   DistributionNotFoundError,
+  InvalidBrokerIdError,
   InvalidPercentageError,
   NoFormError,
   DistributionService,
@@ -68,6 +69,10 @@ export class DistributionController {
         return;
       }
       if (err instanceof InvalidPercentageError) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      if (err instanceof InvalidBrokerIdError) {
         res.status(400).json({ error: err.message });
         return;
       }
