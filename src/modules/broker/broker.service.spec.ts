@@ -123,6 +123,7 @@ describe('BrokerService', () => {
         name: 'Jane Doe',
         email: 'jane@example.com',
         phone: '555-0100',
+        ipAddress: '127.0.0.1',
         status: 'sent',
         createdAt: leads[0].createdAt,
         formName: 'Intake Form',

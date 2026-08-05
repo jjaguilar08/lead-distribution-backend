@@ -54,17 +54,32 @@ export class LeadService {
     }
 
     const normalizedEmail = dto.email.trim().toLowerCase();
-    const decision = await this.distributionEngineService.decide(normalizedEmail, now);
 
-    return this.leadRepository.create({
-      name: dto.name,
-      email: normalizedEmail,
-      phone: dto.phone,
-      formId: form.id,
-      ipAddress,
-      status: decision.status,
-      assignedBrokerId: decision.assignedBrokerId,
-    });
+    try {
+      const decision = await this.distributionEngineService.decide(normalizedEmail, now);
+      return await this.leadRepository.create({
+        name: dto.name,
+        email: normalizedEmail,
+        phone: dto.phone,
+        formId: form.id,
+        ipAddress,
+        status: decision.status,
+        assignedBrokerId: decision.assignedBrokerId,
+      });
+    } catch {
+      // Anything past this point (engine failure, a transient write error on
+      // the first create) must still leave a row behind — 'failed' is a real
+      // status, not just a type that's never produced.
+      return this.leadRepository.create({
+        name: dto.name,
+        email: normalizedEmail,
+        phone: dto.phone,
+        formId: form.id,
+        ipAddress,
+        status: 'failed',
+        assignedBrokerId: null,
+      });
+    }
   }
 
   /**

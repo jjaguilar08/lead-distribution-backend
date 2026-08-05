@@ -5,3 +5,5 @@ coverage/
 *.log
 CLAUDE.md
 project_notes.md
+infra.local.md
+.claude/settings.json

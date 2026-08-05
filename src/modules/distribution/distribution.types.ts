@@ -25,6 +25,7 @@ export interface DistributionLeadDto {
   name: string;
   email: string;
   phone: string;
+  ipAddress: string;
   status: string;
   assignedBrokerId: number | null;
   createdAt: Date;

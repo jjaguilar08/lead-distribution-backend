@@ -82,6 +82,32 @@ describe('LeadService', () => {
       });
       expect(result).toEqual(created);
     });
+
+    it("persists a 'failed' lead when the distribution engine throws", async () => {
+      formRepository.findBySlug.mockResolvedValue(form);
+      distributionEngineService.decide.mockRejectedValue(new Error('engine blew up'));
+      const failed = buildLead({ status: 'failed', assignedBrokerId: null, email: 'jane@example.com' });
+      leadRepository.create.mockResolvedValue(failed);
+      const now = new Date('2026-01-05T12:00:00Z');
+
+      const result = await leadService.submitPublicLead(
+        'intake-form',
+        { name: 'Jane Doe', email: 'Jane@Example.com', phone: '555-0100' },
+        '1.2.3.4',
+        now,
+      );
+
+      expect(leadRepository.create).toHaveBeenCalledWith({
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        phone: '555-0100',
+        formId: form.id,
+        ipAddress: '1.2.3.4',
+        status: 'failed',
+        assignedBrokerId: null,
+      });
+      expect(result).toEqual(failed);
+    });
   });
 
   it('returns all leads', async () => {

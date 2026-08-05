@@ -142,6 +142,7 @@ export class DistributionService {
         name: lead.name,
         email: lead.email,
         phone: lead.phone,
+        ipAddress: lead.ipAddress,
         status: lead.status,
         assignedBrokerId: lead.assignedBrokerId,
         createdAt: lead.createdAt,

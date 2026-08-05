@@ -80,6 +80,7 @@ export class BrokerService {
       name: lead.name,
       email: lead.email,
       phone: lead.phone,
+      ipAddress: lead.ipAddress,
       status: lead.status,
       createdAt: lead.createdAt,
       formName: lead.form.name,

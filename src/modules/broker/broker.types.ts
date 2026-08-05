@@ -19,6 +19,7 @@ export interface BrokerLeadDto {
   name: string;
   email: string;
   phone: string;
+  ipAddress: string;
   status: string;
   createdAt: Date;
   formName: string;
